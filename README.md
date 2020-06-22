@@ -1,17 +1,22 @@
-# Unsupervised Discovery of Object Landmarks via Contrastive Learning --- Pytorch implementation
+# Unsupervised Discovery of Object Landmarks via Contrastive Learning
 
 ![Teaser Image](https://people.cs.umass.edu/~zezhoucheng/contrastive_landmark/figs/fig1.png)
 
-This repository contains the source code for <u>Unsupervised Discovery of Object Landmarks via Contrastive Learning</u>. 
+This repository is a PyTorch implementation of <i>Unsupervised
+Discovery of Object Landmarks via Contrastive Learning</i> Zezhou
+Cheng, Jong-Chyi Su, Subhransu Maji, <u>arXivXXXX, July 2020</u>. 
 
 [[Paper]]()  [[Supplementary]]() [[arXiv]]() [[Project page]](https://people.cs.umass.edu/~zezhoucheng/contrastive_landmark/)  
 
 
 ## Installation
 
-Our implementation is based on the code from [DVE](https://github.com/jamt9000/DVE/tree/master/misc/datasets) (Thewlis et al. ICCV 2019) and [CMC](https://github.com/HobbitLong/CMC) (Tian et al. 2019). (Dependencies: tensorboard-logger, pytorch=1.4.0, torchfile)
+The implementation is based on
+[DVE](https://github.com/jamt9000/DVE/tree/master/misc/datasets)
+[Thewlis et al. ICCV 2019] and
+[CMC](https://github.com/HobbitLong/CMC) [Tian et al. 2019]. (Dependencies: tensorboard-logger, pytorch=1.4.0, torchfile)
 
-Recommanded way to install: 
+To install: 
 ```
 conda create -n ContrastLandmark python=3.7.3 anaconda
 source activate ContrastLandmark
@@ -22,34 +27,31 @@ pip install torchfile
 
 ## Datasets 
 
-### Human face benchmarks
-Please follow the instruction from [DVE](https://github.com/jamt9000/DVE/tree/master/misc/datasets) to download the datasets. 
+### Human faces
+* Please follow the instruction from [DVE](https://github.com/jamt9000/DVE/tree/master/misc/datasets) to download the datasets. 
 
-### Bird benchmark
-iNaturalist Aves. 2017 [[source images](https://github.com/visipedia/inat_comp/tree/master/2017)] [[100K image list](https://people.cs.umass.edu/~zezhoucheng/contrastive_landmark/datasets/inat_aves_100K.txt)]
-
-CUB dataset [[source images](http://www.vision.caltech.edu/visipedia/CUB-200-2011.html)] [[train/val/test set](https://people.cs.umass.edu/~zezhoucheng/contrastive_landmark/datasets/cub_filelist.zip)]
+### Birds
+* iNaturalist Aves 2017 for training. [[source images](https://github.com/visipedia/inat_comp/tree/master/2017)] [[100K image list](https://people.cs.umass.edu/~zezhoucheng/contrastive_landmark/datasets/inat_aves_100K.txt)]
+* CUB dataset for evaluation. [[source images](http://www.vision.caltech.edu/visipedia/CUB-200-2011.html)] [[train/val/test set](https://people.cs.umass.edu/~zezhoucheng/contrastive_landmark/datasets/cub_filelist.zip)]
 
 ## Experiments
 
-### Train MoCo
+### Train representations using MoCo
 
-1. CelebA
+* CelebA 
 ```
 CUDA_VISIBLE_DEVICES=0,1,2,3 python train_moco.py --batch_size 256 --num_workers 12 --nce_k 4096 --cosine  --epochs 800 --model resnet50 --image_crop 20 --image_size 136 --model_name moco_CelebA --model_path /path/to/save/model --dataset CelebA --data_folder datasets/celeba
 ```
-
-2. iNat Aves
+* iNat Aves
 ```
 CUDA_VISIBLE_DEVICES=0,1,2,3 python train_moco.py --batch_size 256 --num_workers 12 --nce_k 4096 --cosine  --epochs 800 --model resnet50 --image_crop 0 --image_size 96 --model_name moco_InatAve --model_path /path/to/save/model --dataset InatAve --imagelist /path/to/imagelist/inat_train_100K.txt
 ```
 
-### Landmark Regression
+### Landmark regression evaluation
 
-1. Face Landmarks
+#### Face benchmarks (CelebA → AFLW)
 
 - Use hypercolumn as representation (`--use_hypercol`) with activation from conv2_x to conv5_x (`--layer 4`)
-
 ```
 CUDA_VISIBLE_DEVICES=0,1 python eval_face.py --model resnet50 --num_workers 8 --layer 4 --trained_model_path /path/to/pretrainedMoCo --learning_rate 0.001 --weight_decay 0.0005 --adam --epochs 200 --cosine --batch_size 32 --log_path /path/to/logfile --dataset AFLW_MTFL --model_name AFLW_M_regressor --model_path /path/to/save/regressor --image_crop 20 --image_size 136 --use_hypercol
 ```
@@ -59,9 +61,16 @@ CUDA_VISIBLE_DEVICES=0,1 python eval_face.py --model resnet50 --num_workers 8 --
 CUDA_VISIBLE_DEVICES=0 python eval_face.py --model resnet50 --num_workers 8 --layer 4 --trained_model_path /path/to/pretrainedMoCo --learning_rate 0.01 --weight_decay 0.05 --adam --epochs 1000 --cosine --batch_size 32 --log_path /path/to/logfile --dataset AFLW_MTFL --model_name AFLW_M_regressor --model_path /path/to/save/regressor --image_crop 20 --image_size 136 --restrict_annos 50  --repeat --TPS_aug --use_hypercol
 ```
 
-**Note**: the number of GPUs used to train the linear regressor has impact on the convergence rate, the possible reason is the batch normalization is conducted separately on different GPUs. Due to the lack of validation set, we early stop the training procedure at 120th, 45th, 80th epoch on MAFL, AFLW, and 300W benchmarks respectively on 2 GPUs. However, this early stopping points may be suboptimal when you train the regressor on a different number of GPUs. The best score on test set is always better than the score at these stopping points. 
+**Note**: the number of GPUs used to train the linear regressor has
+impact on the convergence rate, the possible reason is the batch
+normalization is conducted separately on different GPUs. 
+We stop the training procedure at 120th, 45th, 80th epoch on MAFL, AFLW, and 300W
+benchmarks respectively on 2 GPUs (determined based on our initial
+results and kept fixed in our experiments).
+However, the stopping points may be suboptimal when you train
+the regressor on a different number of GPUs. 
 
-2. Bird Landmarks
+#### Bird landmarks (iNat → CUB)
 
 ```
 CUDA_VISIBLE_DEVICES=0,1 python eval_animal.py --model resnet50 --num_workers 8 --layer 4 --trained_model_path /path/to/pretrainedMoCo --learning_rate 0.001 --weight_decay 0.0005 --adam --epochs 2000 --cosine --batch_size 32 --log_path /path/to/logfile --dataset CUB --model_name CUB_regressor --model_path /path/to/save/regressor --image_crop 0 --image_size 96 --imagelist /path/to/trainlist/train.txt --use_hypercol
@@ -70,24 +79,20 @@ CUDA_VISIBLE_DEVICES=0,1 python eval_animal.py --model resnet50 --num_workers 8 
 **Note**: check out [`data_loaders_animal.py`](./data_loader/data_loaders_animal.py), place the annotation files (train.dat, val.data) and train/val/test text files under `./datasets/CUB-200-2011`
 
 
-
 ## Pretrained models
 
-### Download the pretrained models.
+### Download the pretrained models
 
-#### Contrastive learning models: 
-
-1. Celab:
+* Contrastively learning models:
+ 1. Celeb:
 [[MoCo-ResNet18-CelebA](https://www.dropbox.com/sh/f9act9d7wlspm3c/AAACHwe9BZVKFQkokvGvhYrKa?dl=0)]
 [[MoCo-ResNet50-CelebA](https://www.dropbox.com/sh/jys3jerh0utxr49/AAAEzPJ3ZN4XLUmc4pmXEytFa?dl=0)]
-
-2. iNaturalist Aves:
+ 2. iNat Aves:
 [[MoCo-ResNet18-iNat](https://www.dropbox.com/sh/vf6l9t4e5rbzaf1/AAAgeIcD-TjYHw9B41LcIMbTa?dl=0])] 
 [[MoCo-ResNet50-iNat](https://www.dropbox.com/sh/g1folefnc351eyf/AAD5bmVrvNesTY8Put95WIV0a?dl=0)] 
 [[DVE-Hourglass-iNat](https://www.dropbox.com/sh/hmks0is2v67zn5x/AABS4cxUlH-oVv8zH8pzgLzSa?dl=0)]
 
-#### Linear-regressor: 
-
+* Linear-regressor: 
 [[Face benchmarks](https://www.dropbox.com/sh/cx3m6s4soompt9r/AADDDPeYeOtvCazN7x53vXiFa?dl=0)] 
 [[Bird benchmarks](https://www.dropbox.com/sh/jqn6umci2vlngkb/AAB5740XNLzyAQSPohjkXUOOa?dl=0)]
 
@@ -110,7 +115,7 @@ visdir=./Visualization
 CUDA_VISIBLE_DEVICES=0 python vis_face.py --model resnet50 --num_workers 8 --layer 4 --trained_model_path $pretrained_MOCO_FACE --batch_size 32 --log_path $log_file --dataset AFLW --image_crop 20 --image_size 136 --ckpt_path $pretrained_AFLW_R  --vis_path $visdir --use_hypercol --vis_keypoints
 ```
 
-2. Bird benchmarks:
+1. Bird benchmarks:
 ```
 CUDA_VISIBLE_DEVICES=0 python vis_animal.py --model resnet50 --num_workers 8 --layer 4 --trained_model_path $pretrained_MOCO_inat --batch_size 32 --log_path $log_file --dataset CUB --image_crop 0 --image_size 96 --ckpt_path $pretrained_CUB  --vis_path $visdir --use_hypercol --vis_keypoints
 ```
