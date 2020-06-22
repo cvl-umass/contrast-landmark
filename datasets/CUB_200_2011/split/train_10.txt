@@ -1,0 +1,10 @@
+/mnt/nfs/scratch1/zezhoucheng/datasets/CUB_200_2011/images/113.Baird_Sparrow/Baird_Sparrow_0011_794577.jpg
+/mnt/nfs/scratch1/zezhoucheng/datasets/CUB_200_2011/images/016.Painted_Bunting/Painted_Bunting_0100_16735.jpg
+/mnt/nfs/scratch1/zezhoucheng/datasets/CUB_200_2011/images/161.Blue_winged_Warbler/Blue_Winged_Warbler_0078_161889.jpg
+/mnt/nfs/scratch1/zezhoucheng/datasets/CUB_200_2011/images/021.Eastern_Towhee/Eastern_Towhee_0022_22279.jpg
+/mnt/nfs/scratch1/zezhoucheng/datasets/CUB_200_2011/images/034.Gray_crowned_Rosy_Finch/Gray_Crowned_Rosy_Finch_0080_27108.jpg
+/mnt/nfs/scratch1/zezhoucheng/datasets/CUB_200_2011/images/116.Chipping_Sparrow/Chipping_Sparrow_0042_107791.jpg
+/mnt/nfs/scratch1/zezhoucheng/datasets/CUB_200_2011/images/054.Blue_Grosbeak/Blue_Grosbeak_0111_36841.jpg
+/mnt/nfs/scratch1/zezhoucheng/datasets/CUB_200_2011/images/056.Pine_Grosbeak/Pine_Grosbeak_0024_38403.jpg
+/mnt/nfs/scratch1/zezhoucheng/datasets/CUB_200_2011/images/113.Baird_Sparrow/Baird_Sparrow_0041_794582.jpg
+/mnt/nfs/scratch1/zezhoucheng/datasets/CUB_200_2011/images/056.Pine_Grosbeak/Pine_Grosbeak_0115_38330.jpg

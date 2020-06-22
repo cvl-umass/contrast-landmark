@@ -1,0 +1,4 @@
+
+Download `train.dat` and `val.dat` from https://github.com/guopei/PoseEstimation-FCN-Pytorch/tree/master/anno
+
+Place `train.dat` and `val.dat` under this dictionary
