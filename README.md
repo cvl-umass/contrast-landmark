@@ -4,9 +4,9 @@
 
 This repository is a PyTorch implementation of <i>Unsupervised
 Discovery of Object Landmarks via Contrastive Learning</i> Zezhou
-Cheng, Jong-Chyi Su, Subhransu Maji, <u>arXivXXXX, July 2020</u>. 
+Cheng, Jong-Chyi Su, Subhransu Maji, <u>arXiv:2006.14787, July 2020</u>. 
 
-[[Paper]]()  [[Supplementary]]() [[arXiv]]() [[Project page]](https://people.cs.umass.edu/~zezhoucheng/contrastive_landmark/)  
+[[arXiv]](https://arxiv.org/abs/2006.14787) [[Project page]](https://people.cs.umass.edu/~zezhoucheng/contrastive_landmark/)  
 
 
 ## Installation
@@ -136,26 +136,10 @@ CUDA_VISIBLE_DEVICES=0 python vis_animal.py --model resnet50 --num_workers 8 --l
 If you use this code for your research, please cite the following papers.
 
 ```
-@inproceedings{thewlis2019unsupervised,
-title={Unsupervised Learning of Landmarks by Descriptor Vector Exchange},
-author={Thewlis, James and Albanie, Samuel and Bilen, Hakan and Vedaldi, Andrea},
-booktitle={Proceedings of the IEEE International Conference on Computer Vision},
-pages={6361--6371},
-year={2019}
-}
-
-@article{tian2019contrastive,
-title={Contrastive multiview coding},
-author={Tian, Yonglong and Krishnan, Dilip and Isola, Phillip},
-journal={arXiv preprint arXiv:1906.05849},
-year={2019}
-}
-
-@inproceedings{he2020momentum,
-title={Momentum contrast for unsupervised visual representation learning},
-author={He, Kaiming and Fan, Haoqi and Wu, Yuxin and Xie, Saining and Girshick, Ross},
-booktitle={Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition},
-pages={9729--9738},
+@article{cheng2020unsupervised,
+title={Unsupervised Discovery of Object Landmarks via Contrastive Learning},
+author={Cheng, Zezhou and Su, Jong-Chyi and Maji, Subhransu},
+journal={arXiv preprint arXiv:2006.14787},
 year={2020}
 }
 ```

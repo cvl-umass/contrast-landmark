@@ -14,6 +14,7 @@ pretrained_300W=./Pretrained/ckpt_epoch_80_resnet50_300W.pth
 pretrained_CUB=./Pretrained/CUB_resnet50.pth
 log_file=./Logs/test_pretrained_moco_on_AFLW_M
 
+# evaluate pretrained landmark detector and visualize the detection results
 CUDA_VISIBLE_DEVICES=4 python vis_face.py --model resnet50 --num_workers 8 --layer 4 --trained_model_path $pretrained_MOCO_FACE --batch_size 32 --log_path $log_file --dataset MAFLAligned --image_crop 20 --image_size 136 --ckpt_path $pretrained_MAFL  --vis_path Visualization --use_hypercol --vis_keypoints
 CUDA_VISIBLE_DEVICES=4 python vis_face.py --model resnet50 --num_workers 8 --layer 4 --trained_model_path $pretrained_MOCO_FACE --batch_size 32 --log_path $log_file --dataset AFLW_MTFL --image_crop 20 --image_size 136 --ckpt_path $pretrained_AFLW_M  --vis_path Visualization --use_hypercol --vis_keypoints
 CUDA_VISIBLE_DEVICES=4 python vis_face.py --model resnet50 --num_workers 8 --layer 4 --trained_model_path $pretrained_MOCO_FACE --batch_size 32 --log_path $log_file --dataset AFLW --image_crop 20 --image_size 136 --ckpt_path $pretrained_AFLW_R  --vis_path Visualization --use_hypercol --vis_keypoints
@@ -25,4 +26,3 @@ CUDA_VISIBLE_DEVICES=4 python vis_face.py --model resnet50 --num_workers 8 --lay
 CUDA_VISIBLE_DEVICES=4 python vis_animal.py --model resnet50 --num_workers 8 --layer 4 --trained_model_path $pretrained_MOCO_inat --batch_size 32 --log_path $log_file --dataset CUB --image_crop 0 --image_size 96  --vis_path Visualization --use_hypercol --vis_PCA
 CUDA_VISIBLE_DEVICES=1 python vis_animal.py --model hourglass --num_workers 8 --layer 4 --trained_model_path $pretrained_DVE_inat --batch_size 32 --log_path $log_file --dataset CUB --image_crop 0 --image_size 96  --vis_path Visualization --use_hypercol --vis_PCA
 
-# sbatch -p titanx-short --gres=gpu:1 --mem=40000 -o Logs/%J.out example_pretrained.sh
