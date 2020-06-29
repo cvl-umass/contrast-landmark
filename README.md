@@ -4,7 +4,7 @@
 
 This repository is a PyTorch implementation of <i>Unsupervised
 Discovery of Object Landmarks via Contrastive Learning</i> Zezhou
-Cheng, Jong-Chyi Su, Subhransu Maji, <u>arXiv:2006.14787, July 2020</u>. 
+Cheng, Jong-Chyi Su, Subhransu Maji, <u>arXiv:2006.14787, 2020</u>. 
 
 [[arXiv]](https://arxiv.org/abs/2006.14787) [[Project page]](https://people.cs.umass.edu/~zezhoucheng/contrastive_landmark/)  
 
