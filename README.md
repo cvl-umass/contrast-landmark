@@ -1,8 +1,6 @@
-# On Equivariant and Invariant Learning of Object Landmark Representations 
+# ContrastLandmark
 
-![Teaser Image](https://people.cs.umass.edu/~zezhoucheng/contrastive_landmark/figs/fig1.png | width=100)
-
-This repository is a PyTorch implementation of <i>On Equivariant and Invariant Learning of Object Landmark Representations</i> Zezhou
+This repository is a PyTorch implementation of <i>On Equivariant and Invariant Learning of Object Landmark Representations</i> by Zezhou
 Cheng, Jong-Chyi Su, Subhransu Maji. ICCV 2021.
 
 [[arXiv]](https://arxiv.org/abs/2006.14787v2) [[Project page]](https://people.cs.umass.edu/~zezhoucheng/contrastive_landmark/)  [[Poster]](https://www.dropbox.com/s/5imi8e6m6d895kp/ContrastLandmark_iccv21_poster.pdf?dl=0) [[Supplementary material]](https://openaccess.thecvf.com/content/ICCV2021/supplemental/Cheng_On_Equivariant_and_ICCV_2021_supplemental.pdf)
@@ -23,7 +21,6 @@ conda install pytorch=1.4.0 torchvision -c pytorch
 pip install tensorboard-logger
 pip install torchfile
 ```
-
 ## Datasets 
 
 ### Human faces
