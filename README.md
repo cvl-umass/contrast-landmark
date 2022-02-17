@@ -32,7 +32,7 @@ pip install torchfile
 
 ## Experiments
 
-### Train representations using MoCo
+### Training stage 1: invariant representation learning
 
 * CelebA 
 ```
@@ -43,7 +43,10 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 python train_moco.py --batch_size 256 --num_workers
 CUDA_VISIBLE_DEVICES=0,1,2,3 python train_moco.py --batch_size 256 --num_workers 12 --nce_k 4096 --cosine  --epochs 800 --model resnet50 --image_crop 0 --image_size 96 --model_name moco_InatAve --model_path /path/to/save/model --dataset InatAve --imagelist /path/to/imagelist/inat_train_100K.txt
 ```
 
-### Landmark regression evaluation
+### Training stage 2: equivariant representation projection (TODO)
+
+
+### Evaluation: landmark regression
 
 #### Face benchmarks (CelebA → AFLW)
 
@@ -74,6 +77,9 @@ CUDA_VISIBLE_DEVICES=0,1 python eval_animal.py --model resnet50 --num_workers 8 
 
 **Note**: check out [`data_loaders_animal.py`](./data_loader/data_loaders_animal.py), place the annotation files (train.dat, val.data) and train/val/test text files under `./datasets/CUB-200-2011`. About hyperparameter settings on bird benchmarks, if the number of annotations is smaller or equal to 100 (e.g. 10,
 50, 100), lr=0.01 and weight decay=0.05 for ResNet18, ResNet50, and DVE; if more annotations (e.g. 250, 500, 1241) are available, lr=0.01 and weight decay=0.005 for ResNet18 and ResNet50, but lr=0.01 and weight decay=0.0005 for DVE (because DVE has much better performance with WD=0.0005 than WD=0.05 or 0.005)
+
+### Evaluation: landmark matching (TODO)
+
 
 ## Pretrained models
 
