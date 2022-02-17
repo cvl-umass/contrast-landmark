@@ -1,12 +1,11 @@
-# Unsupervised Discovery of Object Landmarks via Contrastive Learning
+# On Equivariant and Invariant Learning of Object Landmark Representations 
 
-![Teaser Image](https://people.cs.umass.edu/~zezhoucheng/contrastive_landmark/figs/fig1.png)
+![Teaser Image](https://people.cs.umass.edu/~zezhoucheng/contrastive_landmark/figs/fig1.png | width=100)
 
-This repository is a PyTorch implementation of <i>Unsupervised
-Discovery of Object Landmarks via Contrastive Learning</i> Zezhou
-Cheng, Jong-Chyi Su, Subhransu Maji, <u>arXiv:2006.14787, 2020</u>. 
+This repository is a PyTorch implementation of <i>On Equivariant and Invariant Learning of Object Landmark Representations</i> Zezhou
+Cheng, Jong-Chyi Su, Subhransu Maji. ICCV 2021.
 
-[[arXiv]](https://arxiv.org/abs/2006.14787) [[Project page]](https://people.cs.umass.edu/~zezhoucheng/contrastive_landmark/)  
+[[arXiv]](https://arxiv.org/abs/2006.14787v2) [[Project page]](https://people.cs.umass.edu/~zezhoucheng/contrastive_landmark/)  [[Poster]](https://www.dropbox.com/s/5imi8e6m6d895kp/ContrastLandmark_iccv21_poster.pdf?dl=0) [[Supplementary material]](https://openaccess.thecvf.com/content/ICCV2021/supplemental/Cheng_On_Equivariant_and_ICCV_2021_supplemental.pdf)
 
 
 ## Installation
@@ -136,11 +135,12 @@ CUDA_VISIBLE_DEVICES=0 python vis_animal.py --model resnet50 --num_workers 8 --l
 If you use this code for your research, please cite the following papers.
 
 ```
-@article{cheng2020unsupervised,
-title={Unsupervised Discovery of Object Landmarks via Contrastive Learning},
+@inproceedings{cheng2021equivariant,
+title={On Equivariant and Invariant Learning of Object Landmark Representations},
 author={Cheng, Zezhou and Su, Jong-Chyi and Maji, Subhransu},
-journal={arXiv preprint arXiv:2006.14787},
-year={2020}
+booktitle={Proceedings of the IEEE/CVF International Conference on Computer Vision},
+pages={9897--9906},
+year={2021}
 }
 ```
 
