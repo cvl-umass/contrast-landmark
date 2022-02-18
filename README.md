@@ -57,6 +57,8 @@ CUDA_VISIBLE_DEVICES=0,1 python train_feature_projector.py --model resnet50 --fe
 * `--train_layer 4 --val_layer 4 --train_use_hypercol --val_use_hypercol`: use hypercolumn representations (which consists of features from 4 intermediate layers) as the input to the feature projector;
 * To visualize the landmark matching, add `--visualize_matching --vis_path /path/to/save/visualization` to the above command; 
 * `--out_dim 128 --softargmax_mul 7. --temperature 7.`: project hypercolumn to 128 dimensional space. We use `--softargmax_mul 7. --temperature 7.` for `--out_dim 128` or `--out_dim 256`, and `--softargmax_mul 6.5 --temperature 8.` for `--out_dim 64`. These hyperparameters are searched on a validation set.
+* We provide the logs of training feature projectos for ResNet50-half as a reference: [[training logs]](https://www.dropbox.com/sh/6lmi7y0cmg3abws/AAB-NBMaGGjEz_htGdpecSpGa?dl=0)
+
 
 ### Evaluation: 
 
