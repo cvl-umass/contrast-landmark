@@ -17,7 +17,7 @@ The implementation is based on
 
 To install: 
 ```
-conda create -n ContrastLandmark python=3.7.3 anaconda
+conda create -n ContrastLandmark python=3.7.3
 source activate ContrastLandmark
 conda install pytorch=1.4.0 torchvision -c pytorch
 pip install tensorboard-logger

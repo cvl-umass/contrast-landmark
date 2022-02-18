@@ -12,7 +12,6 @@ from scipy.io import loadmat
 from torchvision import transforms
 import torchvision.transforms.functional as TF
 from torch.utils.data.dataset import Dataset
-from data_loader.augmentations import get_composed_augmentations
 import torch.nn.functional as F
 
 from io import BytesIO
@@ -111,14 +110,41 @@ class CelebABase(Dataset):
     def __getitem__(self, index):
         im = Image.open(os.path.join(self.subdir, self.filenames[index])).convert("RGB")
         kp = -1
-        kp_normalized = -1 # None
+        kp_normalized = -1 
         if self.pair_image: # unsupervised contrastive learning 
-            # randomresizecrop is the key to generate pairs of images
-            img1 = self.transforms(self.initial_transforms(im))
-            img2 = self.transforms(self.initial_transforms(im))
-            data = torch.cat([img1, img2], dim=0)
-            if self.crop != 0: # maybe useful for datasets other than celebA/MAFL
-                data = data[:, self.crop:-self.crop, self.crop:-self.crop]
+            if not self.TPS_aug:
+                kp = self.keypoints[index].copy()
+                # randomresizecrop is the key to generate pairs of images
+                img1 = self.transforms(self.initial_transforms(im))
+                img2 = self.transforms(self.initial_transforms(im))
+                data = torch.cat([img1, img2], dim=0)
+                if self.crop != 0: # maybe useful for datasets other than celebA/MAFL
+                    data = data[:, self.crop:-self.crop, self.crop:-self.crop]
+                    kp = kp - self.crop
+                kp1 = torch.tensor(kp)
+                kp2 = kp1.clone()
+                kp = torch.cat([kp1, kp2], 0)
+                C, H, W = data.shape
+                kp_normalized = torch.cat((kp_normalize(H, W, kp1), kp_normalize(H, W, kp2)), 0)
+            else: 
+                #  add TPS deformation for image matching, returns a pair of images, a.w.a keypoints  
+                kp = self.keypoints[index].copy()
+                im1 = self.initial_transforms(im)
+                im1 = TF.to_tensor(im1) * 255
+                im1, im2, flow, grid, kp1, kp2 = self.warper(im1, keypts=kp, crop=self.crop) 
+                im1 = im1.to(torch.uint8)
+                im2 = im2.to(torch.uint8)
+                C, H, W = im1.shape
+                im1 = TF.to_pil_image(im1)
+                im2 = TF.to_pil_image(im2)
+                im1 = self.transforms(im1)
+                im2 = self.transforms(im2)
+                C, H, W = im1.shape
+                num_kp, dim = kp1.shape
+                data = torch.cat([im1, im2], 0) # cat
+                kp = torch.cat([kp1, kp2], 0)
+                kp_normalized = torch.cat((kp_normalize(H, W, kp1), kp_normalize(H, W, kp2)), 0)
+
         else: # supervised postprocessing
             kp = self.keypoints[index].copy()
 
@@ -140,21 +166,36 @@ class CelebABase(Dataset):
             kp = torch.tensor(kp)
             kp_normalized = kp_normalize(H, W, kp)
 
-        # do TPS augmentation here
-
-
         if self.visualize:
-            # from torchvision.utils import make_grid
             from utils.visualization import norm_range
             plt.clf()
             fig = plt.figure()
             if self.pair_image:
-                im1, im2 = torch.split(data, [3, 3], dim=0)
-                ax = fig.add_subplot(121)
-                ax.imshow(norm_range(im1).permute(1, 2, 0).cpu().numpy())
-                ax = fig.add_subplot(122)
-                ax.imshow(norm_range(im2).permute(1, 2, 0).cpu().numpy())
-                print(im1.shape, im2.shape)
+                if not self.TPS_aug:
+                    im1, im2 = torch.split(data, [3, 3], dim=0)
+                    ax = fig.add_subplot(121)
+                    ax.imshow(norm_range(im1).permute(1, 2, 0).cpu().numpy())
+                    ax = fig.add_subplot(122)
+                    ax.imshow(norm_range(im2).permute(1, 2, 0).cpu().numpy())
+                    print(im1.shape, im2.shape)
+                else:
+                    im1, im2 = torch.split(data, [3, 3], dim=0)
+                    kp1, kp2 = torch.split(kp, [num_kp, num_kp], dim=0)
+                    kp1_x, kp1_y = kp1[:, 0].numpy(), kp1[:, 1].numpy()
+                    kp2_x, kp2_y = kp2[:, 0].numpy(), kp2[:, 1].numpy()
+
+                    plt.imshow(norm_range(im1).permute(1, 2, 0).cpu().numpy())
+                    plt.scatter(kp1_x, kp1_y)
+                    plt.savefig(os.path.join('sanity_check', vis_name + '_1.png'), bbox_inches='tight')
+                    plt.close()
+                    
+
+                    fig = plt.figure()
+                    plt.imshow(norm_range(im2).permute(1, 2, 0).cpu().numpy())
+                    plt.scatter(kp2_x, kp2_y)
+                    plt.savefig(os.path.join('sanity_check', vis_name + '_2.png'), bbox_inches='tight')
+                    plt.close()
+                    
             else:
                 ax = fig.add_subplot(111)
                 ax.imshow(norm_range(data).permute(1, 2, 0).cpu().numpy())
@@ -162,17 +203,15 @@ class CelebABase(Dataset):
                 kp_y = kp[:, 1].numpy()
                 ax.scatter(kp_x, kp_y)
                 print(data.shape)
-            # plt.savefig('check_dataloader.png', bbox_inches='tight')
             plt.savefig(os.path.join('sanity_check', vis_name + '.png'), bbox_inches='tight')
             print(os.path.join(self.subdir, self.filenames[index]))
             plt.close()
-        # import pdb; pdb.set_trace()
         return data, kp, kp_normalized, index
 
 
 class CelebAPrunedAligned_MAFLVal(CelebABase):
     eye_kp_idxs = [0, 1]
-    def __init__(self, root, train=True, pair_image=True, imwidth=100, crop=15,
+    def __init__(self, root, train=True, pair_image=True, imwidth=100, crop=15, TPS_aug=False,
                  do_augmentations=True, use_keypoints=False, use_hq_ims=True,
                  visualize=False, val_split="celeba", val_size=2000, random_erasing=False,
                  **kwargs):
@@ -182,6 +221,7 @@ class CelebAPrunedAligned_MAFLVal(CelebABase):
         self.pair_image = pair_image
         self.visualize = visualize
         self.crop = crop
+        self.TPS_aug = TPS_aug # place holder 
         self.use_keypoints = use_keypoints
 
         if use_hq_ims:
@@ -248,6 +288,343 @@ class CelebAPrunedAligned_MAFLVal(CelebABase):
     #    return len(self.data.index)
 
 
+class CelebA_MAFLVal(CelebABase):
+    eye_kp_idxs = [0, 1]
+    def __init__(self, root, train=True, pair_image=True, imwidth=100, crop=15, TPS_aug=False,
+                 do_augmentations=True, use_keypoints=False, use_hq_ims=True,
+                 visualize=False, val_split="celeba", val_size=2000, random_erasing=False,
+                 **kwargs):
+        self.root = root
+        self.imwidth = imwidth
+        self.train = train
+        self.pair_image = pair_image
+        self.visualize = visualize
+        self.crop = crop
+        self.TPS_aug = TPS_aug # place holder 
+        self.use_keypoints = use_keypoints
+
+        print('CelebA images in the wild are used!')
+    
+        #if use_hq_ims:
+        #    subdir = "img_align_celeba_hq"
+        #else:
+        #    subdir = "img_align_celeba"
+        self.subdir = os.path.join(root, 'Img_in_the_wild')
+
+        #anno = pd.read_csv(
+        #    os.path.join(root, 'Anno', 'list_landmarks_align_celeba.txt'), header=1,
+        #    delim_whitespace=True)
+
+        anno = pd.read_csv(
+            os.path.join(root, 'Anno', 'list_landmarks_celeba.txt'), header=1,
+            delim_whitespace=True)
+
+        assert len(anno.index) == 202599
+        split = pd.read_csv(os.path.join(root, 'Eval', 'list_eval_partition.txt'),
+                            header=None, delim_whitespace=True, index_col=0)
+        assert len(split.index) == 202599
+
+        mafltrain = pd.read_csv(os.path.join(root, 'MAFL', 'training.txt'), header=None,
+                                delim_whitespace=True, index_col=0)
+        mafltest = pd.read_csv(os.path.join(root, 'MAFL', 'testing.txt'), header=None,
+                               delim_whitespace=True, index_col=0)
+        # Ensure that we are not using mafl images
+        split.loc[mafltrain.index] = 3
+        split.loc[mafltest.index] = 4
+
+        assert (split[1] == 4).sum() == 1000
+
+        if train:
+            self.data = anno.loc[split[split[1] == 0].index] # CelebA train;
+        elif val_split == "celeba":
+            # subsample images from CelebA val, otherwise training gets slow
+            self.data = anno.loc[split[split[1] == 2].index][:val_size]
+        elif val_split == "mafl":
+            self.data = anno.loc[split[split[1] == 4].index]
+
+        # lefteye_x lefteye_y ; righteye_x righteye_y ; nose_x nose_y ;
+        # leftmouth_x leftmouth_y ; rightmouth_x rightmouth_y
+        self.keypoints = np.array(self.data, dtype=np.float32).reshape(-1, 5, 2)
+        self.filenames = list(self.data.index)
+
+        # Move head up a bit
+        # initial_crop = lambda im: transforms.functional.crop(im, 30, 0, 178, 178) 
+        # self.keypoints[:, :, 1] -= 30
+        # self.keypoints *= self.imwidth / 178.
+
+        # TODO the keypoints are wrongly scaled, but we don't use them
+        self.keypoints[:, :, 0] *= self.imwidth / 178. 
+        self.keypoints[:, :, 1] *= self.imwidth / 218  
+
+        normalize = transforms.Normalize(mean=[0.5084, 0.4224, 0.3769],
+                                         std=[0.2599, 0.2371, 0.2323])
+        augmentations = [
+            JPEGNoise(),
+            # the only augmentation added on the top of DVE
+            transforms.RandomResizedCrop(self.imwidth, scale=(0.2, 1.)),  
+            transforms.transforms.ColorJitter(.4, .4, .4),
+            transforms.ToTensor(),
+            PcaAug()
+        ] if (train and do_augmentations) else [transforms.ToTensor()]
+
+        #self.initial_transforms = transforms.Compose(
+        #    [initial_crop, transforms.Resize(self.imwidth)])
+        self.initial_transforms = transforms.Compose(
+            [transforms.Resize((self.imwidth, self.imwidth))])
+
+        if random_erasing:
+            self.transforms = transforms.Compose(augmentations + [normalize, transforms.RandomErasing()])
+        else:
+            self.transforms = transforms.Compose(augmentations + [normalize])
+
+    #def __len__(self):
+    #    return len(self.data.index)
+
+
+class CelebABaseWild(Dataset):
+
+    def __len__(self):
+        return len(self.filenames)
+
+    def restrict_annos(self, num, datapath=None, outpath=None, repeat_flag=True, num_per_epoch=1000):
+
+        if datapath is None:
+            anno_count = len(self.filenames)
+            pick = np.random.choice(anno_count, num, replace=False)
+            # print(f"Picking annotation for images: {np.array(self.filenames)[pick].tolist()}")
+            if repeat_flag:
+                total_count = min(num_per_epoch, len(self.filenames))
+                # total_count = len(self.filenames)
+                assert num < total_count
+                repeat = int(total_count // num)
+                self.filenames = np.tile(np.array(self.filenames)[pick], repeat)
+                self.keypoints = np.tile(self.keypoints[pick], (repeat, 1, 1))
+            else:
+                self.filenames = np.array(self.filenames)[pick]
+                self.keypoints = self.keypoints[pick]
+
+            with open(os.path.join(outpath, 'datalist.txt'), 'w') as f:
+                f.writelines("%d\n" % idx for idx in pick)
+            with open(os.path.join(outpath, 'namelist.txt'), 'w') as f:
+                f.writelines("%s\n" % name for name in self.filenames)
+        else:
+            with open(os.path.join(datapath, 'datalist.txt'), 'r') as f:
+                pick = np.array([int(line.rstrip()) for line in f.readlines()])
+            if repeat_flag:
+                total_count = min(num_per_epoch, len(self.filenames))
+                # total_count = 1000 if len(self.filenames) > 1000 else len(self.filenames)
+                assert num < total_count # only repeat if the number of images are too small
+                repeat = int(total_count // num)
+                self.filenames = np.tile(np.array(self.filenames)[pick], repeat)
+                self.keypoints = np.tile(self.keypoints[pick], (repeat, 1, 1))
+            else:
+                self.filenames = np.array(self.filenames)[pick]
+                self.keypoints = self.keypoints[pick]
+            # for sanity check
+            with open(os.path.join(datapath, 'namelist_resume.txt'), 'w') as f: 
+                f.writelines("%s\n" % name for name in self.filenames)
+
+
+    def __getitem__(self, index):
+        im = Image.open(os.path.join(self.subdir, self.filenames[index])).convert("RGB")
+        kp = -1
+        kp_normalized = -1 # None
+        # import pdb; pdb.set_trace()
+        if self.pair_image: # unsupervised contrastive learning 
+            if not self.TPS_aug:
+                kp = self.keypoints[index].copy()
+                # randomresizecrop is the key to generate pairs of images
+                img1 = self.transforms(self.initial_transforms(im))
+                img2 = self.transforms(self.initial_transforms(im))
+                data = torch.cat([img1, img2], dim=0)
+                if self.crop != 0: # maybe useful for datasets other than celebA/MAFL
+                    data = data[:, self.crop:-self.crop, self.crop:-self.crop]
+                    kp = kp - self.crop
+                # the following keypoints assuming there is not augmentation applied to images (random crops, resize etc.)
+                kp1 = torch.tensor(kp)
+                kp2 = kp1.clone()
+                kp = torch.cat([kp1, kp2], 0)
+                C, H, W = data.shape
+                kp_normalized = torch.cat((kp_normalize(H, W, kp1), kp_normalize(H, W, kp2)), 0)
+            else: 
+                #  add TPS deformation for image matching, returns a pair of images, a.w.a keypoints  
+                kp = self.keypoints[index].copy()
+                im1 = self.initial_transforms(im)
+                im1 = TF.to_tensor(im1) * 255
+                im1, im2, flow, grid, kp1, kp2 = self.warper(im1, keypts=kp, crop=self.crop) 
+                im1 = im1.to(torch.uint8)
+                im2 = im2.to(torch.uint8)
+                C, H, W = im1.shape
+                im1 = TF.to_pil_image(im1)
+                im2 = TF.to_pil_image(im2)
+                im1 = self.transforms(im1)
+                im2 = self.transforms(im2)
+                C, H, W = im1.shape
+                num_kp, dim = kp1.shape
+                data = torch.cat([im1, im2], 0) # cat
+                kp = torch.cat([kp1, kp2], 0)
+                kp_normalized = torch.cat((kp_normalize(H, W, kp1), kp_normalize(H, W, kp2)), 0)
+
+        else: # supervised postprocessing
+            kp = self.keypoints[index].copy()
+            imW, imH = im.size
+
+            if self.TPS_aug:
+                im1 = self.initial_transforms(im)
+                im1 = TF.to_tensor(im1) * 255
+
+                # TODO: sanity check
+                # hack: resize the keypoints
+                kp[:, 0] *= self.imwidth / imW
+                kp[:, 1] *= self.imwidth / imH
+
+                im1, kp = self.warper(im1, keypts=kp, crop=self.crop) 
+                im1 = im1.to(torch.uint8)
+                im1 = TF.to_pil_image(im1)
+                im1 = self.transforms(im1)
+                data = im1
+            else:
+                data = self.transforms(self.initial_transforms(im))
+
+                # TODO: sanity check
+                # hack: resize the keypoints
+                kp[:, 0] *= self.imwidth / imW
+                kp[:, 1] *= self.imwidth / imH
+                
+                if self.crop != 0: # maybe useful for datasets other than celebA/MAFL
+                    data = data[:, self.crop:-self.crop, self.crop:-self.crop]
+                    kp = kp - self.crop
+            
+            C, H, W = data.shape
+            kp = torch.tensor(kp)
+            kp_normalized = kp_normalize(H, W, kp)
+
+        if self.visualize:
+            # from torchvision.utils import make_grid
+            from utils.visualization import norm_range
+            plt.clf()
+            fig = plt.figure()
+            if self.pair_image:
+                if not self.TPS_aug:
+                    im1, im2 = torch.split(data, [3, 3], dim=0)
+                    ax = fig.add_subplot(121)
+                    ax.imshow(norm_range(im1).permute(1, 2, 0).cpu().numpy())
+                    ax = fig.add_subplot(122)
+                    ax.imshow(norm_range(im2).permute(1, 2, 0).cpu().numpy())
+                    print(im1.shape, im2.shape)
+                else:
+                    im1, im2 = torch.split(data, [3, 3], dim=0)
+                    kp1, kp2 = torch.split(kp, [num_kp, num_kp], dim=0)
+                    kp1_x, kp1_y = kp1[:, 0].numpy(), kp1[:, 1].numpy()
+                    kp2_x, kp2_y = kp2[:, 0].numpy(), kp2[:, 1].numpy()
+
+                    plt.imshow(norm_range(im1).permute(1, 2, 0).cpu().numpy())
+                    plt.scatter(kp1_x, kp1_y)
+                    plt.savefig(os.path.join('sanity_check', vis_name + '_1.png'), bbox_inches='tight')
+                    plt.close()
+                    
+
+                    fig = plt.figure()
+                    plt.imshow(norm_range(im2).permute(1, 2, 0).cpu().numpy())
+                    plt.scatter(kp2_x, kp2_y)
+                    plt.savefig(os.path.join('sanity_check', vis_name + '_2.png'), bbox_inches='tight')
+                    plt.close()
+                    
+            else:
+                ax = fig.add_subplot(111)
+                ax.imshow(norm_range(data).permute(1, 2, 0).cpu().numpy())
+                kp_x = kp[:, 0].numpy()
+                kp_y = kp[:, 1].numpy()
+                ax.scatter(kp_x, kp_y)
+                print(data.shape)
+            # plt.savefig('check_dataloader.png', bbox_inches='tight')
+            plt.savefig(os.path.join('sanity_check', vis_name + '.png'), bbox_inches='tight')
+            print(os.path.join(self.subdir, self.filenames[index]))
+            plt.close()
+        return data, kp, kp_normalized, index
+
+
+class MAFL_wild(CelebABaseWild):
+    eye_kp_idxs = [0, 1]
+
+    def __init__(self, root, train=True, pair_image=False, imwidth=100, crop=15,
+                 do_augmentations=False, use_hq_ims=True, visualize=False, TPS_aug=False, **kwargs):
+        self.root = root
+        self.imwidth = imwidth
+        self.use_hq_ims = use_hq_ims
+        self.visualize = visualize
+        self.train = train
+        self.pair_image = pair_image
+        self.crop = crop
+        # subdir = "img_align_celeba_hq" if use_hq_ims else "img_align_celeba"
+        # self.subdir = os.path.join(root, 'Img', subdir)
+        self.subdir = os.path.join(root, 'Img_in_the_wild')
+        # annos_path = os.path.join(root, 'Anno', 'list_landmarks_align_celeba.txt')
+        annos_path = os.path.join(root, 'Anno', 'list_landmarks_celeba.txt')
+        anno = pd.read_csv(annos_path , header=1, delim_whitespace=True)
+        self.TPS_aug = TPS_aug
+        if self.pair_image:
+            warp_kwargs = dict(
+                warpsd_all=0.001 * .5,
+                warpsd_subset=0.01 * .5,
+                transsd=0.1 * .5,
+                scalesd=0.1 * .5,
+                rotsd=5 * .5,
+                im1_multiplier=1,
+                im1_multiplier_aff=1
+            )
+            self.warper = tps.Warper(imwidth, imwidth, **warp_kwargs) # used for image matching experiments
+        else:
+            self.warper = tps.WarperSingle(H=imwidth, W=imwidth)
+
+        assert len(anno.index) == 202599
+        split = pd.read_csv(os.path.join(root, 'Eval', 'list_eval_partition.txt'),
+                            header=None, delim_whitespace=True, index_col=0)
+        assert len(split.index) == 202599
+        mafltest = pd.read_csv(os.path.join(root, 'MAFL', 'testing.txt'), header=None,
+                               delim_whitespace=True, index_col=0)
+        split.loc[mafltest.index] = 4
+        mafltrain = pd.read_csv(os.path.join(root, 'MAFL', 'training.txt'), header=None,
+                                delim_whitespace=True, index_col=0)
+        split.loc[mafltrain.index] = 5
+        assert (split[1] == 4).sum() == 1000
+        assert (split[1] == 5).sum() == 19000
+
+        if train:
+            self.data = anno.loc[split[split[1] == 5].index]
+        else:
+            self.data = anno.loc[split[split[1] == 4].index]
+
+        # keypoint ordering
+        # lefteye_x lefteye_y ; righteye_x righteye_y ; nose_x nose_y ;
+        # leftmouth_x leftmouth_y ; rightmouth_x rightmouth_y
+        self.keypoints = np.array(self.data, dtype=np.float32).reshape(-1, 5, 2)
+        self.filenames = list(self.data.index)
+
+        # comment out the following codes to disable initial cropping
+
+        # Move head up a bit
+        # initial_crop = lambda im: transforms.functional.crop(im, 30, 0, 178, 178)
+        # self.keypoints[:, :, 1] -= 30
+        # self.keypoints *= self.imwidth / 178.
+
+
+        normalize = transforms.Normalize(mean=[0.5084, 0.4224, 0.3769],
+                                         std=[0.2599, 0.2371, 0.2323])
+        augmentations = [
+            JPEGNoise(),
+            transforms.RandomResizedCrop(self.imwidth, scale=(0.2, 1.)),  
+            transforms.transforms.ColorJitter(.4, .4, .4),
+            transforms.ToTensor(),
+            PcaAug()
+        ] if (train and do_augmentations) else [transforms.ToTensor()]
+
+        self.initial_transforms = transforms.Compose(
+            [transforms.Resize((self.imwidth, self.imwidth))])
+        self.transforms = transforms.Compose(augmentations + [normalize])
+
+
+
 class MAFLAligned(CelebABase):
     eye_kp_idxs = [0, 1]
 
@@ -265,7 +642,19 @@ class MAFLAligned(CelebABase):
         annos_path = os.path.join(root, 'Anno', 'list_landmarks_align_celeba.txt')
         anno = pd.read_csv(annos_path , header=1, delim_whitespace=True)
         self.TPS_aug = TPS_aug
-        self.warper = tps.WarperSingle(H=imwidth, W=imwidth)
+        if self.pair_image:
+            warp_kwargs = dict(
+                warpsd_all=0.001 * .5,
+                warpsd_subset=0.01 * .5,
+                transsd=0.1 * .5,
+                scalesd=0.1 * .5,
+                rotsd=5 * .5,
+                im1_multiplier=1,
+                im1_multiplier_aff=1
+            )
+            self.warper = tps.Warper(imwidth, imwidth, **warp_kwargs) # used for image matching experiments
+        else:
+            self.warper = tps.WarperSingle(H=imwidth, W=imwidth)
 
         assert len(anno.index) == 202599
         split = pd.read_csv(os.path.join(root, 'Eval', 'list_eval_partition.txt'),
@@ -390,6 +779,57 @@ class AFLW(CelebABase):
                     sizes = sizes[-n_validation:]
         return images, keypoints, sizes
 
+# AFLW rotated images
+class AFLW_rotated(CelebABase):
+    eye_kp_idxs = [0, 1]
+
+    def __init__(self, root, train=True, pair_image=False, imwidth=100, crop=15,
+                 do_augmentations=False, visualize=False, use_minival=False, TPS_aug=False, **kwargs):
+        self.root = root
+        self.crop = crop
+        self.imwidth = imwidth
+        self.visualize = visualize
+        self.use_minival = use_minival
+        self.train = train
+        self.pair_image = pair_image
+        self.TPS_aug = TPS_aug
+        self.warper = tps.WarperSingle(H=imwidth, W=imwidth)
+
+        images, keypoints, sizes = self.load_dataset(root)
+        self.sizes = sizes
+        self.filenames = images
+        self.keypoints = keypoints.astype(np.float32)
+        self.subdir = root
+
+        # check raw
+        if False:
+            im_path = pjoin(self.subdir, self.filenames[0])
+            im = Image.open(im_path).convert("RGB")
+            plt.imshow(im)
+            plt.scatter(keypoints[0, :, 0], keypoints[0, :, 1])
+        
+        self.keypoints *= self.imwidth / sizes[:, [1, 0]].reshape(-1, 1, 2)
+        normalize = transforms.Normalize(mean=[0.5084, 0.4224, 0.3769],
+                                         std=[0.2599, 0.2371, 0.2323])
+        # NOTE: we break the aspect ratio here, but hopefully the network should
+        # be fairly tolerant to this
+        self.initial_transforms = transforms.Resize((self.imwidth, self.imwidth))
+        augmentations = [
+            JPEGNoise(),
+            transforms.RandomResizedCrop(self.imwidth, scale=(0.2, 1.)),  
+            transforms.transforms.ColorJitter(.4, .4, .4),
+            transforms.ToTensor(),
+            PcaAug()
+        ] if (train and do_augmentations) else [transforms.ToTensor()]
+        self.transforms = transforms.Compose(augmentations + [normalize])
+
+    def load_dataset(self, data_dir):
+        with open(pjoin(data_dir, 'samples.txt'), 'r') as f:
+            images = f.read().splitlines()
+        keypoints = np.ones((len(images), 5, 2)) * 30 # pseudo keypoint annotations
+        sizes = np.ones((len(images), 2)) # pseudo sizes
+        return images, keypoints, sizes
+
 
 class AFLW_MTFL(CelebABase):
     """Used for testing on the 5-point version of AFLW included in the MTFL download from the
@@ -416,7 +856,7 @@ class AFLW_MTFL(CelebABase):
         self.visualize = visualize
         initial_crop = lambda im: im
         self.TPS_aug = TPS_aug
-        self.warper = tps.WarperSingle(H=imwidth, W=imwidth)
+        self.warper = tps.WarperSingle(H=imwidth, W=imwidth) 
 
         test_anno = pd.read_csv(os.path.join(self.test_root, 'testing.txt'),
                                 header=None, delim_whitespace=True)
@@ -675,7 +1115,9 @@ if __name__ == '__main__':
 
     default_roots = {
         "CelebAPrunedAligned_MAFLVal": "./datasets/celeba",
+        "CelebA_MAFLVal": "./datasets/celeba",
         "MAFLAligned": "./datasets/celeba",
+        "MAFL_wild": "./datasets/celeba",
         "AFLW_MTFL": "./datasets/face_datasets/aflw-mtfl",
         "AFLW": "./datasets/face_datasets/aflw/aflw_release-2",
         "ThreeHundredW": "./datasets/face_datasets/300w/300w",
@@ -684,6 +1126,8 @@ if __name__ == '__main__':
 
     imwidth = 136
     crop = 20
+    if args.dataset == 'MAFL_wild':
+        crop = 20
     # The following three flags have to be true at the same time during contrastive learning  
     #train = True # the split to use
     #pair_image = True # unsupervised learning 
@@ -710,7 +1154,8 @@ if __name__ == '__main__':
     }
     if args.train and args.pairs:
         kwargs["pair_warper"] = True
-
+    
+    torch.manual_seed(0)
     show = args.show
     if args.restrict_to:
         show = min(args.restrict_to, show)
@@ -721,4 +1166,4 @@ if __name__ == '__main__':
     else:
         dataset = globals()[args.dataset](**kwargs)
         #for ii in range(show):
-        dataset[0]
+        dataset[3]
