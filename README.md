@@ -45,7 +45,7 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 python train_moco.py --batch_size 256 --num_workers
 CUDA_VISIBLE_DEVICES=0,1,2,3 python train_moco.py --batch_size 256 --num_workers 12 --nce_k 4096 --cosine  --epochs 800 --model resnet50 --image_crop 0 --image_size 96 --model_name moco_InatAve --model_path /path/to/save/model --dataset InatAve --imagelist /path/to/imagelist/inat_train_100K.txt
 ```
 
-#### Stage 2: equivariant representation projection (TODO)
+#### Stage 2: equivariant representation projection
 
 * CelebA 
 
@@ -128,8 +128,8 @@ CUDA_VISIBLE_DEVICES=0,1 python train_feature_projector.py --model resnet50 --fe
 **Note**: On face benchmarks, the numbers in Table 1 in the main text are reported at 120th, 45th, 80th epoch for MAFL, AFLW and 300W. The epoch is indexing from 0. However, the index was starting from 1 when we saved the model. This leads to different scores with the saved model from these in Table 1 (either slightly better or slightly worse).  
 
 * Pretrained feature projector
-[[Feature projectors](https://www.dropbox.com/sh/ygq7qe24p4pl98l/AAA4PqfBl5327M3rozgfqM4fa?dl=0)]
-The feature projectors are trained under different network architectures (e.g. ResNet18, ResNet50, ResNet50-half, etc.) and pretraining methods (e.g. MoCo, ImageNet, Random Init etc.).
+
+The feature projectors are trained under different network architectures (e.g. ResNet18, ResNet50, ResNet50-half, etc.) and pretraining methods (e.g. MoCo, ImageNet, Random Init etc.). Check out the trained feature projectors: [[Feature projectors](https://www.dropbox.com/sh/ygq7qe24p4pl98l/AAA4PqfBl5327M3rozgfqM4fa?dl=0)]
 
 
 ### Run pretrained landmark detectors
