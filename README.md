@@ -129,7 +129,7 @@ CUDA_VISIBLE_DEVICES=0,1 python train_feature_projector.py --model resnet50 --fe
 
 * Pretrained feature projector
 
-The feature projectors are trained under different network architectures (e.g. ResNet18, ResNet50, ResNet50-half, etc.) and pretraining methods (e.g. MoCo, ImageNet, Random Init etc.). Check out the trained feature projectors: [[Feature projectors](https://www.dropbox.com/sh/ygq7qe24p4pl98l/AAA4PqfBl5327M3rozgfqM4fa?dl=0)]
+The feature projectors are trained under different network architectures (e.g. ResNet18, ResNet50, ResNet50-half, etc.) and pretraining methods (e.g. MoCo, ImageNet, Random Init etc.). Check out the trained feature projectors: [[Feature projectors](https://www.dropbox.com/sh/ygq7qe24p4pl98l/AAA4PqfBl5327M3rozgfqM4fa?dl=0)]. These settings corresponds to Table 4 and Table 5 in the supplementary material. 
 
 
 ### Run pretrained landmark detectors
