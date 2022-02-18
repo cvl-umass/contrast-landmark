@@ -1,8 +1,6 @@
-# On Equivariant and Invariant Learning of Object Landmark Representations 
+# ContrastLandmark
 
-![Teaser Image](https://people.cs.umass.edu/~zezhoucheng/contrastive_landmark/figs/fig1.png | width=100)
-
-This repository is a PyTorch implementation of <i>On Equivariant and Invariant Learning of Object Landmark Representations</i> Zezhou
+This repository is a PyTorch implementation of <i>On Equivariant and Invariant Learning of Object Landmark Representations</i> by Zezhou
 Cheng, Jong-Chyi Su, Subhransu Maji. ICCV 2021.
 
 [[arXiv]](https://arxiv.org/abs/2006.14787v2) [[Project page]](https://people.cs.umass.edu/~zezhoucheng/contrastive_landmark/)  [[Poster]](https://www.dropbox.com/s/5imi8e6m6d895kp/ContrastLandmark_iccv21_poster.pdf?dl=0) [[Supplementary material]](https://openaccess.thecvf.com/content/ICCV2021/supplemental/Cheng_On_Equivariant_and_ICCV_2021_supplemental.pdf)
@@ -23,19 +21,20 @@ conda install pytorch=1.4.0 torchvision -c pytorch
 pip install tensorboard-logger
 pip install torchfile
 ```
-
 ## Datasets 
 
-### Human faces
+#### Human faces
 * Please follow the instruction from [DVE](https://github.com/jamt9000/DVE/tree/master/misc/datasets) to download the datasets. 
 
-### Birds
+#### Birds
 * iNaturalist Aves 2017 for training. [[source images](https://github.com/visipedia/inat_comp/tree/master/2017)] [[100K image list](https://people.cs.umass.edu/~zezhoucheng/contrastive_landmark/datasets/inat_aves_100K.txt)]
 * CUB dataset for evaluation. [[source images](http://www.vision.caltech.edu/visipedia/CUB-200-2011.html)] [[train/val/test set](https://people.cs.umass.edu/~zezhoucheng/contrastive_landmark/datasets/cub_filelist.zip)]
 
 ## Experiments
 
-### Train representations using MoCo
+### Training 
+
+#### Stage 1: invariant representation learning
 
 * CelebA 
 ```
@@ -46,9 +45,14 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 python train_moco.py --batch_size 256 --num_workers
 CUDA_VISIBLE_DEVICES=0,1,2,3 python train_moco.py --batch_size 256 --num_workers 12 --nce_k 4096 --cosine  --epochs 800 --model resnet50 --image_crop 0 --image_size 96 --model_name moco_InatAve --model_path /path/to/save/model --dataset InatAve --imagelist /path/to/imagelist/inat_train_100K.txt
 ```
 
-### Landmark regression evaluation
+#### Stage 2: equivariant representation projection (TODO)
 
-#### Face benchmarks (CelebA → AFLW)
+
+### Evaluation: 
+
+#### 1. Landmark regression
+
+##### Face benchmarks (CelebA → AFLW)
 
 - Use hypercolumn as representation (`--use_hypercol`) with activation from conv2_x to conv5_x (`--layer 4`)
 ```
@@ -69,7 +73,7 @@ results and kept fixed in our experiments).
 However, the stopping points may be suboptimal when you train
 the regressor on a different number of GPUs. 
 
-#### Bird benchmarks (iNat → CUB)
+##### Bird benchmarks (iNat → CUB)
 
 ```
 CUDA_VISIBLE_DEVICES=0,1 python eval_animal.py --model resnet50 --num_workers 8 --layer 4 --trained_model_path /path/to/pretrainedMoCo --learning_rate 0.01 --weight_decay 0.005 --adam --epochs 2000 --cosine --batch_size 32 --log_path /path/to/logfile --dataset CUB --model_name CUB_regressor --model_path /path/to/save/regressor --image_crop 0 --image_size 96 --imagelist /path/to/trainlist/train.txt --use_hypercol
@@ -77,6 +81,9 @@ CUDA_VISIBLE_DEVICES=0,1 python eval_animal.py --model resnet50 --num_workers 8 
 
 **Note**: check out [`data_loaders_animal.py`](./data_loader/data_loaders_animal.py), place the annotation files (train.dat, val.data) and train/val/test text files under `./datasets/CUB-200-2011`. About hyperparameter settings on bird benchmarks, if the number of annotations is smaller or equal to 100 (e.g. 10,
 50, 100), lr=0.01 and weight decay=0.05 for ResNet18, ResNet50, and DVE; if more annotations (e.g. 250, 500, 1241) are available, lr=0.01 and weight decay=0.005 for ResNet18 and ResNet50, but lr=0.01 and weight decay=0.0005 for DVE (because DVE has much better performance with WD=0.0005 than WD=0.05 or 0.005)
+
+#### 2. Landmark matching (TODO)
+
 
 ## Pretrained models
 
