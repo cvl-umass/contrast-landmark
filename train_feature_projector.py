@@ -60,11 +60,10 @@ def parse_option():
     # fine-tune the pretrained moco on CelebA dataset 
     parser.add_argument('--dataset', type=str, default='CelebA', choices=['MAFLAligned', 'AFLW_MTFL', 'AFLW', 'ThreeHundredW', 'InatAve', 'CelebA'])
     parser.add_argument('--val_dataset', type=str, default='MAFLAligned', choices=['MAFLAligned', 'AFLW_MTFL', 'AFLW', 'ThreeHundredW', 'InatAve', 'CelebA'], help='dataset used for image matching experiments')
-    parser.add_argument('--restrict_annos', type=int, default=-1, help='restrict the number of images/annotations')
 
     # model path and name  
-    parser.add_argument('--model_name', type=str) 
-    parser.add_argument('--model_path', type=str) # path to store the models
+    parser.add_argument('--model_name', type=str, default='feature projector') 
+    parser.add_argument('--model_path', type=str, default='./logs') # path to store the models
 
     # resume
     parser.add_argument('--resume', default='', type=str, metavar='PATH',
@@ -126,8 +125,6 @@ def parse_option():
     }
 
     opt.data_folder = default_roots[opt.val_dataset]
-    opt.save_path = opt.model_path
-    opt.tb_path = '%s_tensorboard' % opt.model_path
     opt.eye_idx = eye_idxs[opt.val_dataset]
     opt.num_points = num_annotated_points[opt.val_dataset]
     Tee(opt.log_path, 'a')
@@ -137,10 +134,11 @@ def parse_option():
     for it in iterations:
         opt.lr_decay_epochs.append(int(it))
 
+    opt.save_path = opt.model_path
+    opt.tb_path = '%s_tensorboard' % opt.model_path
     opt.tb_folder = os.path.join(opt.tb_path, opt.model_name)
     if not os.path.isdir(opt.tb_folder):
         os.makedirs(opt.tb_folder)
-
     opt.save_folder = os.path.join(opt.save_path, opt.model_name)
     if not os.path.isdir(opt.save_folder):
         os.makedirs(opt.save_folder)

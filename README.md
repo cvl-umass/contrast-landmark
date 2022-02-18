@@ -47,6 +47,16 @@ CUDA_VISIBLE_DEVICES=0,1,2,3 python train_moco.py --batch_size 256 --num_workers
 
 #### Stage 2: equivariant representation projection (TODO)
 
+* CelebA 
+
+```
+CUDA_VISIBLE_DEVICES=0,1 python train_feature_projector.py --model resnet50 --feat_distill --image_crop 20 --image_size 136 --train_layer 4 --val_layer 4 --trained_model_path /path/to/pretrained_moco --adam --epochs 10 --cosine --batch_size 32 --log_path /path/to/logfile.log --model_name feature_projector --model_path /path/to/save/checkpoint --train_use_hypercol --val_use_hypercol --vis_path /path/to/save/visualization --train_out_size 24 --val_out_size 96 --distill_mode softmax --kernel_size 1 --out_dim 128 --softargmax_mul 7. --temperature 7. 
+```
+
+**Note**: 
+* `--train_layer 4 --val_layer 4 --train_use_hypercol --val_use_hypercol`: use hypercolumn representations (which consists of features from 4 intermediate layers) as the input to the feature projector;
+* To visualize the landmark matching, add `--visualize_matching --vis_path /path/to/save/visualization` to the above command; 
+* `--out_dim 128 --softargmax_mul 7. --temperature 7.`: project hypercolumn to 128 dimensional space. We use `--softargmax_mul 7. --temperature 7.` for `--out_dim 128` or `--out_dim 256`, and `--softargmax_mul 6.5 --temperature 8.` for `--out_dim 64`. These hyperparameters are searched on a validation set.
 
 ### Evaluation: 
 
@@ -82,7 +92,19 @@ CUDA_VISIBLE_DEVICES=0,1 python eval_animal.py --model resnet50 --num_workers 8 
 **Note**: check out [`data_loaders_animal.py`](./data_loader/data_loaders_animal.py), place the annotation files (train.dat, val.data) and train/val/test text files under `./datasets/CUB-200-2011`. About hyperparameter settings on bird benchmarks, if the number of annotations is smaller or equal to 100 (e.g. 10,
 50, 100), lr=0.01 and weight decay=0.05 for ResNet18, ResNet50, and DVE; if more annotations (e.g. 250, 500, 1241) are available, lr=0.01 and weight decay=0.005 for ResNet18 and ResNet50, but lr=0.01 and weight decay=0.0005 for DVE (because DVE has much better performance with WD=0.0005 than WD=0.05 or 0.005)
 
-#### 2. Landmark matching (TODO)
+#### 2. Landmark matching 
+
+* CelebA 
+
+```
+CUDA_VISIBLE_DEVICES=0,1 python train_feature_projector.py --model resnet50 --feature_distill --image_crop 20 --image_size 136 --train_layer 4 --val_layer 4 --trained_model_path /path/to/pretrained_moco  --log_path /path/to/logfile.log --model_name feature_projector --model_path /path/to/save/tmpfile --train_use_hypercol --val_use_hypercol  --train_out_size 24 --val_out_size 96 --distill_mode softmax --kernel_size 1 --out_dim 128 --softargmax_mul 7. --temperature 7. --evaluation_mode --trained_feat_model_path /path/to/pretrained-feature-projector --visualize_matching --vis_path /path/to/save/visualization
+```
+
+**Note**: 
+* You could assign any strings to some arguments: `--model_name feature_projector`
+* `--visualize_matching --vis_path /path/to/save/visualization`: visualize the landmark matching results, remove `--visualize_matching` to turn off the visualization
+* To test the performance of hypercolumn without feature projection, remove `--feature_distill`
+* Modify `--out_dim 128 --softargmax_mul 7. --temperature 7.` accordingly when testing other feature projection dimensions (e.g. 64, 256). `--softargmax_mul 7. --temperature 7.` for `--out_dim 256`; `--softargmax_mul 6.5 --temperature 8.` for `--out_dim 64`.
 
 
 ## Pretrained models
@@ -93,6 +115,7 @@ CUDA_VISIBLE_DEVICES=0,1 python eval_animal.py --model resnet50 --num_workers 8 
  1. Celeb:
 [[MoCo-ResNet18-CelebA](https://www.dropbox.com/sh/f9act9d7wlspm3c/AAACHwe9BZVKFQkokvGvhYrKa?dl=0)]
 [[MoCo-ResNet50-CelebA](https://www.dropbox.com/sh/jys3jerh0utxr49/AAAEzPJ3ZN4XLUmc4pmXEytFa?dl=0)]
+[[MoCo-ResNet50-CelebA-In-the-Wild](https://www.dropbox.com/s/6y3ns9cqbpodj69/ckpt_epoch_800_resnet50_celeba_wild.pth?dl=0)]
  2. iNat Aves:
 [[MoCo-ResNet18-iNat](https://www.dropbox.com/sh/vf6l9t4e5rbzaf1/AAAgeIcD-TjYHw9B41LcIMbTa?dl=0])] 
 [[MoCo-ResNet50-iNat](https://www.dropbox.com/sh/g1folefnc351eyf/AAD5bmVrvNesTY8Put95WIV0a?dl=0)] 
@@ -103,6 +126,11 @@ CUDA_VISIBLE_DEVICES=0,1 python eval_animal.py --model resnet50 --num_workers 8 
 [[Bird benchmarks](https://www.dropbox.com/sh/jqn6umci2vlngkb/AAB5740XNLzyAQSPohjkXUOOa?dl=0)]
 
 **Note**: On face benchmarks, the numbers in Table 1 in the main text are reported at 120th, 45th, 80th epoch for MAFL, AFLW and 300W. The epoch is indexing from 0. However, the index was starting from 1 when we saved the model. This leads to different scores with the saved model from these in Table 1 (either slightly better or slightly worse).  
+
+* Pretrained feature projector
+[[Feature projectors](https://www.dropbox.com/sh/ygq7qe24p4pl98l/AAA4PqfBl5327M3rozgfqM4fa?dl=0)]
+The feature projectors are trained under different network architectures (e.g. ResNet18, ResNet50, ResNet50-half, etc.) and pretraining methods (e.g. MoCo, ImageNet, Random Init etc.).
+
 
 ### Run pretrained landmark detectors
 
