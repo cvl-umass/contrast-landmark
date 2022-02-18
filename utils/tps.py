@@ -17,7 +17,7 @@ def spatial_grid_unnormalized(H, W):
     yi = torch.linspace(0, H - 1, H)
 
     yy, xx = torch.meshgrid(yi, xi)
-    grid = torch.stack((xx.reshape(-1), yy.reshape(-1)), 1)
+    grid = torch.stack((yy.reshape(-1), xx.reshape(-1)), 1) # modify the order of xx, yy in DVE
     return grid.reshape(H, W, 2)
 
 
@@ -118,13 +118,13 @@ class Warper(object):
         if keypts is not None:
             kp1 = self.warp_keypoints(keypts, grid1_unnormalized)
 
-        im1 = F.grid_sample(im1, grid1)
-        im2 = F.grid_sample(im2, grid1)
+        im1 = F.grid_sample(im1, grid1, align_corners = True)
+        im2 = F.grid_sample(im2, grid1, align_corners = True)
 
         weights2 = random_tps_weights(self.nctrlpts, self.warpsd_all, self.warpsd_subset, self.transsd,
                                       self.scalesd, self.rotsd)
         grid2 = torch.matmul(self.F, weights2).reshape(1, self.H, self.W, 2)
-        im2 = F.grid_sample(im2, grid2)
+        im2 = F.grid_sample(im2, grid2, align_corners = True)
 
         if crop != 0:
             im1 = im1[:, :, crop:-crop, crop:-crop]
@@ -214,7 +214,7 @@ class WarperSingle(object):
         if keypts is not None:
             kp1 = self.warp_keypoints(keypts, grid1_unnormalized)
 
-        im1 = F.grid_sample(im1, grid1)
+        im1 = F.grid_sample(im1, grid1, align_corners = True)
 
         if crop != 0:
             im1 = im1[:, :, crop:-crop, crop:-crop]

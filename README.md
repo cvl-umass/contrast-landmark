@@ -99,13 +99,13 @@ CUDA_VISIBLE_DEVICES=0,1 python eval_animal.py --model resnet50 --num_workers 8 
 * CelebA 
 
 ```
-CUDA_VISIBLE_DEVICES=0,1 python train_feature_projector.py --model resnet50 --feature_distill --image_crop 20 --image_size 136 --train_layer 4 --val_layer 4 --trained_model_path /path/to/pretrained_moco  --log_path /path/to/logfile.log --model_name feature_projector --model_path /path/to/save/tmpfile --train_use_hypercol --val_use_hypercol  --train_out_size 24 --val_out_size 96 --distill_mode softmax --kernel_size 1 --out_dim 128 --softargmax_mul 7. --temperature 7. --evaluation_mode --trained_feat_model_path /path/to/pretrained-feature-projector --visualize_matching --vis_path /path/to/save/visualization
+CUDA_VISIBLE_DEVICES=0,1 python train_feature_projector.py --model resnet50 --feat_distill --image_crop 20 --image_size 136 --train_layer 4 --val_layer 4 --trained_model_path /path/to/pretrained_moco  --log_path /path/to/logfile.log --model_name feature_projector --model_path /path/to/save/tmpfile --train_use_hypercol --val_use_hypercol  --train_out_size 24 --val_out_size 96 --distill_mode softmax --kernel_size 1 --out_dim 128 --softargmax_mul 7. --temperature 7. --evaluation_mode --trained_feat_model_path /path/to/pretrained-feature-projector --visualize_matching --vis_path /path/to/save/visualization
 ```
 
 **Note**: 
 * You could assign any strings to some arguments: `--model_name feature_projector`
 * `--visualize_matching --vis_path /path/to/save/visualization`: visualize the landmark matching results, remove `--visualize_matching` to turn off the visualization
-* To test the performance of hypercolumn without feature projection, remove `--feature_distill`
+* To test the performance of hypercolumn without feature projection, remove `--feat_distill`
 * Modify `--out_dim 128 --softargmax_mul 7. --temperature 7.` accordingly when testing other feature projection dimensions (e.g. 64, 256). `--softargmax_mul 7. --temperature 7.` for `--out_dim 256`; `--softargmax_mul 6.5 --temperature 8.` for `--out_dim 64`.
 
 

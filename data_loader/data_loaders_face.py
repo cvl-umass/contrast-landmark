@@ -110,7 +110,8 @@ class CelebABase(Dataset):
     def __getitem__(self, index):
         im = Image.open(os.path.join(self.subdir, self.filenames[index])).convert("RGB")
         kp = -1
-        kp_normalized = -1 
+        kp_normalized = -1 # None
+        # import pdb; pdb.set_trace()
         if self.pair_image: # unsupervised contrastive learning 
             if not self.TPS_aug:
                 kp = self.keypoints[index].copy()
@@ -121,6 +122,7 @@ class CelebABase(Dataset):
                 if self.crop != 0: # maybe useful for datasets other than celebA/MAFL
                     data = data[:, self.crop:-self.crop, self.crop:-self.crop]
                     kp = kp - self.crop
+                # the following keypoints assuming there is not augmentation applied to images (random crops, resize etc.)
                 kp1 = torch.tensor(kp)
                 kp2 = kp1.clone()
                 kp = torch.cat([kp1, kp2], 0)
@@ -167,6 +169,7 @@ class CelebABase(Dataset):
             kp_normalized = kp_normalize(H, W, kp)
 
         if self.visualize:
+            # from torchvision.utils import make_grid
             from utils.visualization import norm_range
             plt.clf()
             fig = plt.figure()
@@ -203,6 +206,7 @@ class CelebABase(Dataset):
                 kp_y = kp[:, 1].numpy()
                 ax.scatter(kp_x, kp_y)
                 print(data.shape)
+            # plt.savefig('check_dataloader.png', bbox_inches='tight')
             plt.savefig(os.path.join('sanity_check', vis_name + '.png'), bbox_inches='tight')
             print(os.path.join(self.subdir, self.filenames[index]))
             plt.close()

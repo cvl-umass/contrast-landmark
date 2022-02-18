@@ -264,7 +264,7 @@ def main():
     if args.trained_model_path != 'none':
         print('==> loading pre-trained model')
         ckpt = torch.load(args.trained_model_path, map_location='cpu')
-        model.load_state_dict(ckpt['model'], strict=False)
+        model.load_state_dict(ckpt['model'], strict=True)
         print("==> loaded checkpoint '{}' (epoch {})".format(
                             args.trained_model_path, ckpt['epoch']))
         print('==> done')
@@ -286,6 +286,8 @@ def main():
         print('Feature distillation is used: kernel_size:{}, mode:{}, out_dim:{}'.format(
                 args.kernel_size, args.distill_mode, args.out_dim))
         feat_distiller = feat_distiller.cuda()
+    else:
+        feat_distiller = None
 
 
     #  evaluate feat distiller on landmark matching, given pretrained moco and feature distiller
@@ -294,6 +296,7 @@ def main():
         if args.feat_distill:
             print("==> use pretrained feature distiller ...")
             feat_ckpt = torch.load(args.trained_feat_model_path, map_location='cpu') 
+            # in below, feat_distiller is misspelt, but to use pretrained model, I keep it.
             feat_distiller.load_state_dict(feat_ckpt['feat_disiller'], strict=False)
             print("==> loaded checkpoint '{}' (epoch {})".format(
                                 args.trained_feat_model_path, feat_ckpt['epoch']))
@@ -404,9 +407,7 @@ def main():
                 best_error = val_diff_err
                 save_name = 'best.pth'
                 save_name = os.path.join(args.save_folder, save_name)
-                print('saving best model! val_same: {} val_diff: {} 
-                       test_same: {} test_diff: {}'.format(val_same_err, 
-                            val_diff_err, test_same_err, test_diff_err))
+                print('saving best model! val_same: {} val_diff: {} test_same: {} test_diff: {}'.format(val_same_err, val_diff_err, test_same_err, test_diff_err))
                 torch.save(state, save_name)
 
 
