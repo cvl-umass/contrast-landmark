@@ -107,7 +107,7 @@ CUDA_VISIBLE_DEVICES=0,1 python train_feature_projector.py --model resnet50 --fe
 * `--visualize_matching --vis_path /path/to/save/visualization`: visualize the landmark matching results, remove `--visualize_matching` to turn off the visualization
 * To test the performance of hypercolumn without feature projection, remove `--feat_distill`
 * Modify `--out_dim 128 --softargmax_mul 7. --temperature 7.` accordingly when testing other feature projection dimensions (e.g. 64, 256). `--softargmax_mul 7. --temperature 7.` for `--out_dim 256`; `--softargmax_mul 6.5 --temperature 8.` for `--out_dim 64`.
-
+* See [examples](./example/example_test.sh) on how to run the landmark matching with hypercolumn or projected features.
 
 ## Pretrained models
 
